@@ -29,7 +29,9 @@ namespace Cjm.Common.UtilLib.FastEnum
         /// <typeparam name="TUnderlier">The underlying type to interconvert.</typeparam>
         /// <param name="convertMe">the value to interconvert</param>
         /// <returns>The converted value</returns>
+        /// <exception cref="TypeInitializationException">Thrown for a mismatched of enum type and underlying type.</exception>
         /// <exception cref="EnumAndUnderlierMismatchException{TEnum,TUnderlier}">
+        /// Will be the inner exception of the <see cref="TypeInitializationException"/>.
         /// Thrown if <typeparamref name="TUnderlier"/> is not the actual exact underlying type of the <typeparamref name="TEnum"/> enumeration.
         /// For example if "AnimalType" <see langword="enum"/> was backed by a <see cref="UInt64"/> yet you used this function to convert a <see cref="System.Byte"/> to AnimalType,
         /// the exception will be thrown.
@@ -51,7 +53,9 @@ namespace Cjm.Common.UtilLib.FastEnum
         /// <typeparam name="TEnum"><see langword="enum"/> type.</typeparam>
         /// <typeparam name="TUnderlier"><see langword="enum"/>'s underlying type</typeparam>
         /// <returns>The converted value</returns>
+        /// <exception cref="TypeInitializationException">Thrown for a mismatched of enum type and underlying type.</exception>
         /// <exception cref="EnumAndUnderlierMismatchException{TEnum,TUnderlier}">
+        /// Will be the inner exception of the <see cref="TypeInitializationException"/>.
         /// Thrown if <typeparamref name="TUnderlier"/> is not the actual exact underlying type of the <typeparamref name="TEnum"/> enumeration.
         /// For example if "AnimalType" <see langword="enum"/> was backed by a <see cref="UInt64"/> yet you used this function to convert a <see cref="System.Byte"/> to AnimalType,
         /// the exception will be thrown.
