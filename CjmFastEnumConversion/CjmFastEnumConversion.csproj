@@ -12,7 +12,7 @@
     <Company>CJM Screws, LLC</Company>
     <Product>CjmUtilities</Product>
     <Title>CjmFastEnumLib</Title>
-    <Summanry>A utility for efficient interconversion of enums to and from their underlying backing type, useful in generic contexts.</Summanry>
+    <Summary>A utility for efficient interconversion of enums to and from their underlying backing type, useful in generic contexts.</Summary>
     <Description>A utility for efficient interconversion of enums to and from their underlying backing type, useful in generic contexts.</Description>
     <Copyright>Copyright © 2021 CJM Screws, LLC</Copyright>
     <Authors>cpsusie</Authors>
