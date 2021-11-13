@@ -10,7 +10,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8F67D7ED-1FA3-4472-80E7-216755FE088D}"
 	ProjectSection(SolutionItems) = preProject
 		CjmFastEnumConversion.sln.DotSettings = CjmFastEnumConversion.sln.DotSettings
-		README_EnumConvert.md = README_EnumConvert.md
+		README.md = README.md
 	EndProjectSection
 EndProject
 Global
