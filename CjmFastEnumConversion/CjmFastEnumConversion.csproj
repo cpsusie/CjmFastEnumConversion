@@ -11,7 +11,9 @@
     <Version>1.0.0.0-beta</Version>
     <Company>CJM Screws, LLC</Company>
     <Product>CjmUtilities</Product>
-    <Description>A set of C# code utilities commonly used by the programmers at CJM Screws, LLC</Description>
+    <Title>CjmFastEnumLib</Title>
+    <Summanry>A utility for efficient interconversion of enums to and from their underlying backing type, useful in generic contexts.</Summanry>
+    <Description>A utility for efficient interconversion of enums to and from their underlying backing type, useful in generic contexts.</Description>
     <Copyright>Copyright © 2021 CJM Screws, LLC</Copyright>
     <Authors>cpsusie</Authors>
     <PackageReadmeFile>README_EnumConvert.md</PackageReadmeFile>
