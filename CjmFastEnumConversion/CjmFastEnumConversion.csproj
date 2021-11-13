@@ -31,6 +31,8 @@
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
     <PackageReleaseNotes>This is the initial beta release.  It has been unit tested and similar libraries have been used in production. </PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/cpsusie/CjmFastEnumConversion.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/cpsusie/CjmFastEnumConversion</PackageProjectUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6|AnyCPU'">
