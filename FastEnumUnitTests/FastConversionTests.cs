@@ -10,12 +10,11 @@ namespace FastEnumUnitTests
     public class FastConversionTests : FixtureAndHelperHavingTests<FastEnumTestFixture>, IClassFixture<FastEnumTestFixture>
     {
         /// <inheritdoc />
-        public FastConversionTests(ITestOutputHelper helper, FastEnumTestFixture fixture) : base(helper, fixture)
-        {
-        }
+        public FastConversionTests(ITestOutputHelper helper, FastEnumTestFixture fixture) 
+            : base(helper, fixture) {}
 
         [Fact]
-        public void TestByteConversionEnumsPassing()
+        public void TestConversionEnumsPassing()
         {
             RunPassingTest(Fixture.AllByteBacked);
             RunPassingTest(Fixture.AllSByteBacked);
@@ -28,6 +27,38 @@ namespace FastEnumUnitTests
 
             RunPassingTest(Fixture.AllULongBacked);
             RunPassingTest(Fixture.AllLongBacked);
+        }
+
+        [Fact]
+        public void TestConversionArrayPassing()
+        {
+            RunSuccessArrayConversionTest(Fixture.AllByteBacked);
+            RunSuccessArrayConversionTest(Fixture.AllSByteBacked);
+
+            RunSuccessArrayConversionTest(Fixture.AllUShortBacked);
+            RunSuccessArrayConversionTest(Fixture.AllShortBacked);
+
+            RunSuccessArrayConversionTest(Fixture.AllUIntBacked);
+            RunSuccessArrayConversionTest(Fixture.AllIntBacked);
+
+            RunSuccessArrayConversionTest(Fixture.AllULongBacked);
+            RunSuccessArrayConversionTest(Fixture.AllLongBacked);
+        }
+
+        [Fact]
+        public void TestArrayConversionFailing()
+        {
+            TestNullArrayConvertThrows<ByteBacked, byte>();
+            TestNullArrayConvertThrows<SByteBacked, sbyte>();
+
+            TestNullArrayConvertThrows<UShortBacked, ushort>();
+            TestNullArrayConvertThrows<ShortBacked, short>();
+
+            TestNullArrayConvertThrows<UIntBacked, uint>();
+            TestNullArrayConvertThrows<IntBacked, int>();
+
+            TestNullArrayConvertThrows<ULongBacked, ulong>();
+            TestNullArrayConvertThrows<LongBacked, long>();
         }
 
         [Fact]
@@ -179,6 +210,17 @@ namespace FastEnumUnitTests
             }
         }
 
+        private void TestNullArrayConvertThrows<TEnum, TUnderling>() where TEnum : unmanaged, Enum
+            where TUnderling : unmanaged, IEquatable<TUnderling>, IComparable<TUnderling>, IConvertible
+        {
+            const TUnderling[]? arrU = null;
+            const TEnum[]? arr = null;
+            Assert.Throws<ArgumentNullException>(() =>
+                EnumConverterUtil.ReinterpretEnumArrAsUnderlier<TEnum, TUnderling>(arr!));
+            Assert.Throws<ArgumentNullException>(() =>
+                EnumConverterUtil.ReinterpretUnderlierArrAsEnum<TEnum, TUnderling>(arrU!));
+        }
+
         private void RunPassingTest<TEnum, TUnderling>(ImmutableArray<EnumBackerPair<TEnum, TUnderling>> toConvert)
             where TEnum : unmanaged, Enum
             where TUnderling : unmanaged, IEquatable<TUnderling>, IComparable<TUnderling>, IConvertible
@@ -188,6 +230,66 @@ namespace FastEnumUnitTests
                 ref readonly var item = ref toConvert.ItemRef(i);
                 Assert.Equal(EnumConverterUtil.ConvertEnumToUnderlier<TEnum, TUnderling>(item.EnumValue), item.BackingValue);
                 Assert.Equal(EnumConverterUtil.ConvertUnderlierToEnumValue<TEnum, TUnderling>(item.BackingValue), item.EnumValue);
+                Assert.Equal(item.EnumValue.GetHashCode(), item.BackingValue.GetHashCode());
+            }
+        }
+
+        private void RunSuccessArrayConversionTest<TEnum, TUnderling>(ImmutableArray<EnumBackerPair<TEnum, TUnderling>> useUs)
+            where TEnum : unmanaged, Enum
+            where TUnderling : unmanaged, IEquatable<TUnderling>, IComparable<TUnderling>, IConvertible
+        {
+            ImmutableArray<EnumBackerPair<TEnum, TUnderling>> sortedByEnum = Fixture.SortByEnum(useUs).CopyThenShuffleCopy();
+            ImmutableArray<EnumBackerPair<TEnum, TUnderling>> sortedByUnderlier = Fixture.SortByUnderlier(useUs).CopyThenShuffleCopy();
+
+            var shuffled = useUs.CopyThenShuffleCopy();
+            (TEnum[] shuffledEnumValues, TUnderling[] shuffledUnderliers) = Split(shuffled);
+            ImmutableArray<TEnum> originalShuffledEnumValues = shuffledEnumValues.ToImmutableArray();
+            ImmutableArray<TUnderling> originalShuffledUnderliers = shuffledUnderliers.ToImmutableArray();
+
+            TUnderling[] reinterpretedEnum =
+                EnumConverterUtil.ReinterpretEnumArrAsUnderlier<TEnum, TUnderling>(shuffledEnumValues);
+            TEnum[] reinterpretedUnderliers =
+                EnumConverterUtil.ReinterpretUnderlierArrAsEnum<TEnum, TUnderling>(shuffledUnderliers);
+
+            
+            Array.Sort(shuffledEnumValues);
+            Assert.True(reinterpretedEnum.Select(EnumConverterUtil.ConvertUnderlierToEnumValue<TEnum, TUnderling>).SequenceEqual(shuffledEnumValues));
+            
+            Array.Sort(shuffledUnderliers);
+            Assert.True(reinterpretedUnderliers.Select(EnumConverterUtil.ConvertEnumToUnderlier<TEnum, TUnderling>).SequenceEqual(shuffledUnderliers));
+
+            Assert.False(originalShuffledEnumValues.SequenceEqual(shuffledEnumValues));
+            Assert.False(originalShuffledUnderliers.SequenceEqual(shuffledUnderliers));
+            Assert.Equal(reinterpretedEnum.Length, reinterpretedUnderliers.Length);
+            for (int i = 0; i < reinterpretedEnum.Length && i < reinterpretedUnderliers.Length; ++i)
+            {
+                TUnderling underlVal = reinterpretedEnum[i];
+                TEnum enumVal = reinterpretedUnderliers[i];
+                Assert.True(EnumConverterUtil.ConvertEnumToUnderlier<TEnum, TUnderling>(enumVal).Equals(underlVal));
+            }
+
+            Assert.True(reinterpretedUnderliers
+                .Select(itm => EnumConverterUtil.ConvertEnumToUnderlier<TEnum, TUnderling>(itm))
+                .SequenceEqual(shuffledUnderliers));
+            Assert.True(reinterpretedEnum
+                .Select(itm => EnumConverterUtil.ConvertUnderlierToEnumValue<TEnum, TUnderling>(itm))
+                .SequenceEqual(shuffledEnumValues));
+
+
+
+            static (TEnum[] ShuffledEnum, TUnderling[] ShuffledUnderling) Split(
+                ImmutableArray<EnumBackerPair<TEnum, TUnderling>> splitMe)
+            {
+                TEnum[] targetEnum = new TEnum[splitMe.Length];
+                TUnderling[] targetUnderling = new TUnderling[splitMe.Length];
+                for (int i = 0; i < splitMe.Length; ++i)
+                {
+                    ref readonly var item = ref splitMe.ItemRef(i);
+                    targetEnum[i] = item.EnumValue;
+                    targetUnderling[i] = item.BackingValue;
+                }
+
+                return (targetEnum, targetUnderling);
             }
         }
     }

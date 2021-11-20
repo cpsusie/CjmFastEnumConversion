@@ -29,7 +29,7 @@ namespace Cjm.Common.UtilLib.FastEnum
         /// <typeparam name="TUnderlier">The underlying type to interconvert.</typeparam>
         /// <param name="convertMe">the value to interconvert</param>
         /// <returns>The converted value</returns>
-        /// <exception cref="TypeInitializationException">Thrown for a mismatched of enum type and underlying type.</exception>
+        /// <exception cref="TypeInitializationException">Thrown for a mismatch of enum type and underlying type.</exception>
         /// <exception cref="EnumAndUnderlierMismatchException{TEnum,TUnderlier}">
         /// Will be the inner exception of the <see cref="TypeInitializationException"/>.
         /// Thrown if <typeparamref name="TUnderlier"/> is not the actual exact underlying type of the <typeparamref name="TEnum"/> enumeration.
@@ -53,7 +53,7 @@ namespace Cjm.Common.UtilLib.FastEnum
         /// <typeparam name="TEnum"><see langword="enum"/> type.</typeparam>
         /// <typeparam name="TUnderlier"><see langword="enum"/>'s underlying type</typeparam>
         /// <returns>The converted value</returns>
-        /// <exception cref="TypeInitializationException">Thrown for a mismatched of enum type and underlying type.</exception>
+        /// <exception cref="TypeInitializationException">Thrown for a mismatch of enum type and underlying type.</exception>
         /// <exception cref="EnumAndUnderlierMismatchException{TEnum,TUnderlier}">
         /// Will be the inner exception of the <see cref="TypeInitializationException"/>.
         /// Thrown if <typeparamref name="TUnderlier"/> is not the actual exact underlying type of the <typeparamref name="TEnum"/> enumeration.
@@ -68,6 +68,59 @@ namespace Cjm.Common.UtilLib.FastEnum
         public static TUnderlier ConvertEnumToUnderlier<TEnum, TUnderlier>(TEnum convertMe)
             where TEnum : unmanaged, Enum where TUnderlier : unmanaged, IEquatable<TUnderlier>, IComparable<TUnderlier>
                 => ConversionHelper<TEnum, TUnderlier>.ConvertEnumToUnder(convertMe);
+
+        /// <summary>
+        /// Reinterpret the array of <typeparamref name="TUnderlier"/> supplied by <paramref name="convertUs"/> as being
+        /// an array of <typeparamref name="TEnum"/> values.
+        /// </summary>
+        /// <param name="convertUs">The array to reinterpret</param>
+        /// <typeparam name="TEnum">The enum type</typeparam>
+        /// <typeparam name="TUnderlier">The underlying type</typeparam>
+        /// <returns>The same array referenced by <paramref name="convertUs"/> but reinterpreted to be an array of type <typeparamref name="TEnum"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="convertUs"/> was null.</exception>
+        /// <exception cref="TypeInitializationException">Thrown for a mismatch of enum type and underlying type.</exception>
+        /// <exception cref="EnumAndUnderlierMismatchException{TEnum,TUnderlier}">
+        /// Will be the inner exception of the <see cref="TypeInitializationException"/>.
+        /// Thrown if <typeparamref name="TUnderlier"/> is not the actual exact underlying type of the <typeparamref name="TEnum"/> enumeration.
+        /// For example if "AnimalType" <see langword="enum"/> was backed by a <see cref="UInt64"/> yet you used this function to convert a <see cref="System.Byte"/> to AnimalType,
+        /// the exception will be thrown.
+        /// </exception>
+        /// <remarks>The match check between <typeparamref name="TEnum"/> and <typeparamref name="TUnderlier"/> will happen
+        /// ONCE for each <typeparamref name="TEnum"/> and <typeparamref name="TUnderlier"/> combination tried (per process).
+        /// Only use this function to convert a <typeparamref name="TUnderlier"/> that
+        /// is EXACTLY the underling type of the <typeparamref name="TEnum"/> type to which you wish to convert.
+        /// </remarks>
+        public static TEnum[] ReinterpretUnderlierArrAsEnum<TEnum, TUnderlier>(TUnderlier[] convertUs)
+            where TEnum : unmanaged, Enum where TUnderlier : unmanaged, IEquatable<TUnderlier>, IComparable<TUnderlier>
+            => ConversionHelper<TEnum, TUnderlier>.ConvertUnderToEnumArr(convertUs ?? throw new ArgumentNullException(nameof(convertUs)));
+
+        /// <summary>
+        /// Reinterpret the array of <typeparamref name="TEnum"/> supplied by <paramref name="convertUs"/> as being
+        /// an array of <typeparamref name="TUnderlier"/> values.
+        /// </summary>
+        /// <param name="convertUs">The array to reinterpret</param>
+        /// <typeparam name="TEnum">The enum type</typeparam>
+        /// <typeparam name="TUnderlier">The underlying type</typeparam>
+        /// <returns>The same array referenced by <paramref name="convertUs"/> but reinterpreted to be an array of type <typeparamref name="TUnderlier"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="convertUs"/> was null.</exception>
+        /// <exception cref="TypeInitializationException">Thrown for a mismatch of enum type and underlying type.</exception>
+        /// <exception cref="EnumAndUnderlierMismatchException{TEnum,TUnderlier}">
+        /// Will be the inner exception of the <see cref="TypeInitializationException"/>.
+        /// Thrown if <typeparamref name="TUnderlier"/> is not the actual exact underlying type of the <typeparamref name="TEnum"/> enumeration.
+        /// For example if "AnimalType" <see langword="enum"/> was backed by a <see cref="UInt64"/> yet you used this function to convert a <see cref="System.Byte"/> to AnimalType,
+        /// the exception will be thrown.
+        /// </exception>
+        /// <remarks>The match check between <typeparamref name="TEnum"/> and <typeparamref name="TUnderlier"/> will happen
+        /// ONCE for each <typeparamref name="TEnum"/> and <typeparamref name="TUnderlier"/> combination tried (per process).
+        /// Only use this function to convert a <typeparamref name="TUnderlier"/> that
+        /// is EXACTLY the underling type of the <typeparamref name="TEnum"/> type to which you wish to convert.
+        /// </remarks>
+        public static TUnderlier[] ReinterpretEnumArrAsUnderlier<TEnum, TUnderlier>(TEnum[] convertUs)
+            where TEnum : unmanaged, Enum
+            where TUnderlier : unmanaged, IEquatable<TUnderlier>, IComparable<TUnderlier> =>
+            ConversionHelper<TEnum, TUnderlier>.ConvertEnumToUnderArr(convertUs ??
+                                                                      throw new ArgumentNullException(
+                                                                          nameof(convertUs)));
 
     }
 

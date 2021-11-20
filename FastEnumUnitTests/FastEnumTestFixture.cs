@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using Xunit;
 
 namespace FastEnumUnitTests
 {
     public sealed class FastEnumTestFixture
     {
-
-
         public IEnumerable<TBacker> FindAllValuesMatchingBacker<TBacker>(TBacker foo = default)
             where TBacker : unmanaged, IEquatable<TBacker>, IComparable<TBacker>, IConvertible
         {
@@ -37,8 +36,6 @@ namespace FastEnumUnitTests
                                     throw new InvalidCastException("Can't convert it")),
                 _ => throw new InvalidOperationException("Bad backer.")
             };
-
-
         }
 
         public ImmutableArray<EnumBackerPair<ByteBacked, byte>> AllByteBacked => AllTheByteBacked;
@@ -51,6 +48,28 @@ namespace FastEnumUnitTests
         public ImmutableArray<EnumBackerPair<LongBacked, long>> AllLongBacked => AllTheLongBacked;
         public ImmutableSortedSet<EnumConversionTestValue> AllTestValues => AllTheTestValue;
 
+        public (TEnum[] SortedAsEnum, TUnderlier[] SortedAsUnderlier) SortInverted<TEnum, TUnderlier>(ImmutableArray<EnumBackerPair<TEnum, TUnderlier>> sortInvert)
+            where TEnum : unmanaged, Enum
+            where TUnderlier : unmanaged, IEquatable<TUnderlier>, IComparable<TUnderlier>, IConvertible
+        {
+            var byEnumVal = SortByEnum(sortInvert, true);
+            var byUnderlier = SortByUnderlier(sortInvert, true);
+            return (byEnumVal.Select(itm => itm.EnumValue).ToArray(),
+                byUnderlier.Select(itm => itm.BackingValue).ToArray());
+        }
+
+        public ImmutableArray<EnumBackerPair<TEnum, TUnderlier>> SortByEnum<TEnum, TUnderlier>(
+            ImmutableArray<EnumBackerPair<TEnum,
+                TUnderlier>> sortUs, bool inverted = false) where TEnum : unmanaged, Enum
+            where TUnderlier : unmanaged, IEquatable<TUnderlier>, IComparable<TUnderlier>, IConvertible =>
+            sortUs.Sort(ByEnumValComparer<TEnum, TUnderlier>.CreateByEnumComparer(inverted));
+
+        public ImmutableArray<EnumBackerPair<TEnum, TUnderlier>> SortByUnderlier<TEnum, TUnderlier>(
+            ImmutableArray<EnumBackerPair<TEnum,
+                TUnderlier>> sortUs, bool inverted = false) where TEnum : unmanaged, Enum
+            where TUnderlier : unmanaged, IEquatable<TUnderlier>, IComparable<TUnderlier>, IConvertible =>
+                sortUs.Sort(ByUnderlierValComparer<TEnum, TUnderlier>.CreateByUnderlierComparer(inverted));
+        
         static FastEnumTestFixture()
         {
             AllTheByteBacked = InitAllDefinedValue<ByteBacked, byte>();
@@ -159,6 +178,42 @@ namespace FastEnumUnitTests
         private static readonly ImmutableArray<EnumBackerPair<LongBacked, long>> AllTheLongBacked;
         private static readonly ImmutableSortedSet<EnumConversionTestValue> AllTheTestValue;
 
+        private sealed class ByEnumValComparer<TEnum, TUnderlier> : Comparer<EnumBackerPair<TEnum, TUnderlier>>
+            where TEnum : unmanaged, Enum
+            where TUnderlier : unmanaged, IEquatable<TUnderlier>, IComparable<TUnderlier>, IConvertible
+        {
+            internal static ByEnumValComparer<TEnum, TUnderlier> CreateByEnumComparer() => CreateByEnumComparer(false);
+            internal static ByEnumValComparer<TEnum, TUnderlier> CreateByEnumComparer(bool invert) => new(invert);
+            /// <inheritdoc />
+            public override int Compare(EnumBackerPair<TEnum, TUnderlier> x, EnumBackerPair<TEnum, TUnderlier> y)
+            {
+                var temp =  (x.EnumValue.CompareTo(y.EnumValue));
+                return _inverted ? -temp : temp;
+            }
+
+            private ByEnumValComparer(bool inverted) => _inverted = inverted;
+
+            private readonly bool _inverted;
+        }
+
+        private sealed class ByUnderlierValComparer<TEnum, TUnderlier> : Comparer<EnumBackerPair<TEnum, TUnderlier>>
+            where TEnum : unmanaged, Enum
+            where TUnderlier : unmanaged, IEquatable<TUnderlier>, IComparable<TUnderlier>, IConvertible
+        {
+            internal static ByUnderlierValComparer<TEnum, TUnderlier> CreateByUnderlierComparer() =>
+                CreateByUnderlierComparer(false);
+            internal static ByUnderlierValComparer<TEnum, TUnderlier> CreateByUnderlierComparer(bool invert) => new(invert);
+            /// <inheritdoc />
+            public override int Compare(EnumBackerPair<TEnum, TUnderlier> x, EnumBackerPair<TEnum, TUnderlier> y)
+            {
+                var temp = (x.BackingValue.CompareTo(y.BackingValue));
+                return _inverted ? -temp : temp;
+            }
+
+            private ByUnderlierValComparer(bool inverted) => _inverted = inverted;
+
+            private readonly bool _inverted;
+        }
     }
 
     public readonly record struct EnumBackerPair<TEnum, TUnderlier>(TEnum EnumValue, TUnderlier BackingValue, ulong BackingValueAsULong)
@@ -357,5 +412,64 @@ namespace FastEnumUnitTests
         MaxValue = long.MaxValue,
     }
 
-    
+    public static class ArrayShuffleExtensions
+    {
+        public static ImmutableArray<T> CopyThenShuffleCopy<T>(this ImmutableArray<T> copyMeThenShuffle) where T : unmanaged
+        {
+            const int stackAllocCutoff = 5;
+            Span<T> copy = copyMeThenShuffle switch
+            {
+                { IsDefault: true } => throw new ArgumentException("Parameter is invalid and uninitialized.",
+                    nameof(copyMeThenShuffle)),
+                { } buff when buff.Length == 0 => Span<T>.Empty,
+                { } buff when buff.Length > 0 && buff.Length <= stackAllocCutoff => stackalloc T[copyMeThenShuffle
+                    .Length],
+                _ => new T[copyMeThenShuffle.Length]
+            };
+            for (int i = 0; i < copyMeThenShuffle.Length && i < copy.Length; ++i)
+            {
+                copy[i] = copyMeThenShuffle[i];
+            }
+            copy.Shuffle();
+            return copy.ToImmutableArray();
+        }
+
+        public static void Shuffle<T>(this T[] array) 
+            => Shuffle(array.AsSpan());
+        
+        public static void Shuffle<T>(this Span<T> array)
+        {
+            // https://stackoverflow.com/a/110570
+            Random rgen = RGen;
+            int n = array.Length;
+            while (n > 1)
+            {
+                int k = rgen.Next(n--);
+                (array[n], array[k]) = (array[k], array[n]);
+            }
+        }
+
+        public static ImmutableArray<T> ToImmutableArray<T>(this ReadOnlySpan<T> items)
+        {
+            ImmutableArray<T> ret = ImmutableArray<T>.Empty;
+            if (items.Length > 0)
+            {
+                var bldr = ImmutableArray.CreateBuilder<T>(items.Length);
+                for (int i = 0; i < items.Length; ++i)
+                {
+                    bldr.Add(items[i]);
+                }
+                ret = bldr.MoveToImmutable();
+            }
+            return ret;
+        }
+
+        public static ImmutableArray<T> ToImmutableArray<T>(this Span<T> items) =>
+            ToImmutableArray((ReadOnlySpan<T>)items);
+        
+
+        //tl initialized with value factory, will not be null unless set to it explicitly.
+        private static Random RGen => TheRng.Value!;
+        private static readonly ThreadLocal<Random> TheRng = new(() => new(), false);
+    }
 }
