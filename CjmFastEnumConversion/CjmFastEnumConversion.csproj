@@ -8,7 +8,7 @@
     <AssemblyName>CjmFastEnumLib</AssemblyName>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
-    <Version>1.0.0.0-beta</Version>
+    <Version>1.0.0.1-beta</Version>
     <Company>CJM Screws, LLC</Company>
     <Product>CjmUtilities</Product>
     <Title>CjmFastEnumLib</Title>
@@ -30,9 +30,9 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
-    <PackageReleaseNotes>This is the initial beta release.  It has been unit tested and similar libraries have been used in production. </PackageReleaseNotes>
+    <AssemblyVersion>1.0.0.1</AssemblyVersion>
+    <FileVersion>1.0.0.1</FileVersion>
+    <PackageReleaseNotes>This release adds methods that reinterpret arrays of enum types as arrays of their respective underliers and vice-versa.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/cpsusie/CjmFastEnumConversion.git</RepositoryUrl>
     <PackageProjectUrl>https://github.com/cpsusie/CjmFastEnumConversion</PackageProjectUrl>
   </PropertyGroup>
